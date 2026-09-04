@@ -1,0 +1,7 @@
+node_modules/
+lib/
+dist/
+.test-artifacts/
+coverage/
+*.tgz
+*.log
