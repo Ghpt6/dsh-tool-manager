@@ -1,5 +1,5 @@
 export const zh = {
-  title: '工具管理', subtitle: '选择 Agent 可以使用的内置工具。',
+  title: '工具管理', subtitle: '选择 Agent 可以使用的工具；自动发现当前运行时和会话加载的工具。',
   scope: '用户级设置 · 对使用同一配置的会话生效',
   loaded: '已加载', blocked: '已禁用', available: '本插件允许', unloaded: '当前未加载',
   search: '搜索工具名称或用途…', all: '全部工具', shell: '终端', files: '文件', searchGroup: '搜索', other: '其他',
@@ -20,7 +20,7 @@ export const zh = {
 }
 export type TextKey = keyof typeof zh
 export const en: Record<TextKey, string> = {
-  title: 'Tool Manager', subtitle: 'Choose which built-in tools your agents can use.',
+  title: 'Tool Manager', subtitle: 'Choose which tools your agents can use. Tools loaded by the runtime and sessions are discovered automatically.',
   scope: 'User settings · Applies to sessions sharing this configuration',
   loaded: 'Loaded', blocked: 'Disabled', available: 'Allowed by this plugin', unloaded: 'Not loaded',
   search: 'Search tool names or descriptions…', all: 'All tools', shell: 'Terminal', files: 'Files', searchGroup: 'Search', other: 'Other',

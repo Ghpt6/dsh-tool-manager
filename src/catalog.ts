@@ -1,7 +1,7 @@
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-agent'
 import type {} from '@deepseek-ai/dsh-tools'
-import { BUILTIN_TOOLS, type ToolRow } from './contracts.ts'
+import { BUILTIN_TOOLS, isManageableToolName, type ToolRow } from './contracts.ts'
 
 /** A root-only query misses tools contributed by agent presets and scoped plugins. */
 export function readCatalog(ctx: Context, disabledTools: string[]) {
@@ -12,8 +12,12 @@ export function readCatalog(ctx: Context, disabledTools: string[]) {
   }
   const add = (schemas: ReturnType<typeof ctx.tools.schemas>, isSession: boolean) => {
     for (const schema of schemas) {
-      const row = rows.get(schema.name)
-      if (!row) continue
+      if (!isManageableToolName(schema.name)) continue
+      let row = rows.get(schema.name)
+      if (!row) {
+        row = { name: schema.name, category: 'other', description: '', loaded: false, sessionCount: 0 }
+        rows.set(schema.name, row)
+      }
       row.loaded = true
       row.description ||= schema.description.slice(0, 1000)
       if (isSession) row.sessionCount++

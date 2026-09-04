@@ -8,6 +8,47 @@ let h: Harness | undefined
 afterEach(async () => { await h?.close(); h = undefined })
 
 describe('real Cordis tool pipeline', () => {
+  it('discovers tools beyond the preset catalog and controls them through the same policy', async () => {
+    h = await harness()
+    const remove = h.probe('additional_tool')
+    h.probe('constructor')
+    const parent = h.agent('parent')
+    h.probe('session_tool', parent.ctx)
+    h.agent('child', parent)
+    const catalog = readCatalog(h.ctx, [])
+    expect(catalog.tools.find(tool => tool.name === 'additional_tool')).toMatchObject({
+      loaded: true, category: 'other', description: 'Fixture additional_tool', sessionCount: 2,
+    })
+    expect(catalog.tools.find(tool => tool.name === 'constructor')).toMatchObject({ category: 'other', loaded: true })
+    expect(catalog.tools.filter(tool => tool.name === 'session_tool')).toEqual([
+      { name: 'session_tool', category: 'other', description: 'Fixture session_tool', loaded: true, sessionCount: 2 },
+    ])
+    await h.setDisabled(['additional_tool', 'session_tool'])
+    expect((await h.assemble(parent)).tools.map(tool => tool.name)).toEqual(['constructor'])
+    expect((await h.execute('additional_tool')).isError).toBe(true)
+    expect((await h.execute('session_tool', parent)).isError).toBe(true)
+    expect(h.calls).toEqual([])
+    remove()
+    expect(readCatalog(h.ctx, ['additional_tool']).tools.find(tool => tool.name === 'additional_tool'))
+      .toMatchObject({ loaded: false, category: 'other' })
+    h.probe('additional_tool')
+    expect((await h.execute('additional_tool')).isError).toBe(true)
+    await h.setDisabled([])
+    expect((await h.execute('additional_tool')).isError).toBe(false)
+    expect((await h.execute('session_tool', parent)).isError).toBe(false)
+  })
+
+  it('only offers dynamically discovered names that settings can manage', async () => {
+    h = await harness()
+    h.probe('bad.name')
+    h.probe('a'.repeat(129))
+    h.probe('supported-tool_2')
+    const names = readCatalog(h.ctx, []).tools.map(tool => tool.name)
+    expect(names).toContain('supported-tool_2')
+    expect(names).not.toContain('bad.name')
+    expect(names).not.toContain('a'.repeat(129))
+  })
+
   it('removes write from requests and blocks its body while read stays available', async () => {
     h = await harness()
     h.probe('read'); h.probe('write'); h.probe('pwsh')
@@ -78,7 +119,9 @@ describe('real Cordis tool pipeline', () => {
     const assembly = await h.assemble(agent)
     expect(assembly.sections.find(section => section.name === 'tools:sdk')?.text).toContain('write')
     expect(assembly.tools.some(tool => tool.name === 'write')).toBe(false)
-    expect(readCatalog(h.ctx, ['write']).codeSessionCount).toBe(1)
+    const catalog = readCatalog(h.ctx, ['write'])
+    expect(catalog.codeSessionCount).toBe(1)
+    expect(catalog.tools.some(tool => tool.name === 'run_code')).toBe(false)
     const result = await h.ctx.tools.execute({
       name: 'run_code', callId: ToolCallId('code-test'),
       arguments: { code: 'await tools.read({}); await tools.write({})', description: 'Verify tool controls' },

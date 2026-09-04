@@ -64,7 +64,7 @@ export function ToolManager({ scope, t }: ToolManagerProps) {
   const filtered = (catalog?.tools ?? []).filter(tool => {
     const matchesCategory = category === 'all' || category === tool.category
     const needle = query.trim().toLocaleLowerCase()
-    return matchesCategory && `${tool.name} ${description(tool.name)}`.toLocaleLowerCase().includes(needle)
+    return matchesCategory && `${tool.name} ${description(tool.name)} ${tool.description}`.toLocaleLowerCase().includes(needle)
   })
 
   const save = async (toolName?: string) => {
@@ -114,7 +114,7 @@ export function ToolManager({ scope, t }: ToolManagerProps) {
       {filtered.map(tool => <div className="row" key={tool.name}>
         <div className="tool">
           <div className="name"><code>{tool.name}</code><span className="badge">{t(categoryKey[tool.category])}</span></div>
-          <div className="description">{description(tool.name)}</div>
+          <div className="description">{Object.hasOwn(zh, `tool.${tool.name}`) ? description(tool.name) : tool.description || tool.name}</div>
           <div className={`row-state ${disabled.has(tool.name) ? 'blocked' : ''}`}>
             {disabled.has(tool.name) ? t('blocked') : tool.loaded ? t('available') : t('unloaded')}
             {!tool.loaded && disabled.has(tool.name) ? ` · ${t('unloaded')}` : ''}

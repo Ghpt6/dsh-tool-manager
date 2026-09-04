@@ -34,13 +34,16 @@ export const BUILTIN_TOOLS: Record<string, ToolCategory> = {
 }
 
 /** This validates persisted input too; transport names are not capabilities. */
+export function isManageableToolName(name: string): boolean {
+  return /^[A-Za-z0-9_-]{1,128}$/.test(name) && name !== 'run_code'
+}
+
 export function validateSettings(value: ManagerSettings): void {
   if (value.schemaVersion !== 1 || !Array.isArray(value.disabledTools)
     || value.disabledTools.length > 256) throw new Error('Invalid tool manager settings')
   const seen = new Set<string>()
   for (const name of value.disabledTools) {
-    if (typeof name !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(name)
-      || name === 'run_code' || seen.has(name)) {
+    if (typeof name !== 'string' || !isManageableToolName(name) || seen.has(name)) {
       throw new Error(`Invalid or duplicate tool name: ${String(name)}`)
     }
     seen.add(name)

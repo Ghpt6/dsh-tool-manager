@@ -2,13 +2,28 @@
 
 在 DeepSeek Harness 的 **设置 → 工具管理** 页面，逐项开关内置 Agent 工具。
 
-支持 `pwsh`、`bash`、`read`、`read_image`、`write`、`edit`、`str_replace_editor`、`glob`、`grep`。关闭 `write` 会保留同一插件中的 `read` 和 `edit`。
+自动发现当前运行时和各会话注册的工具，支持逐项开关其他内置工具，以及通过同一工具注册表加载的插件工具。`pwsh`、`bash`、`read`、`read_image`、`write`、`edit`、`str_replace_editor`、`glob`、`grep` 作为常用工具始终显示，其他已加载工具自动归入「其他」。关闭 `write` 会保留同一插件中的 `read` 和 `edit`。
 
 ## 安装
 
-已验证的 DSH 版本：**`0.1.2-rc.1`**。Node.js：`^22.19.0 || >=24.0.0`。本插件目前通过本地源码或打包文件安装，尚未发布到 npm。
+已验证的 DSH 版本：**`0.1.2-rc.1`**。Node.js：`^22.19.0 || >=24.0.0`。本插件支持 GitHub 源码、本地源码或打包文件安装，尚未发布到 npm。
 
-从项目目录运行：
+通过 GitHub 安装：
+
+```powershell
+npx @deepseek-ai/dsh@0.1.2-rc.1 plugin --profile web add github:Ghpt6/dsh-tool-manager
+```
+
+GitHub 源码不包含 `lib/` 构建产物，pnpm 需要运行本包的 `prepack` 脚本。首次安装如果出现 `ERR_PNPM_GIT_DEP_PREPARE_NOT_ALLOWED`，请在报错指定的 profile 配置文件中添加该提交的构建许可。默认 Windows 路径为 `%USERPROFILE%\.dsh\profiles\web\pnpm-workspace.yaml`：
+
+```yaml
+allowBuilds:
+  'dsh-tool-manager@https://codeload.github.com/Ghpt6/dsh-tool-manager/tar.gz/3211d01c1ecd464e5d52acd7065f8685b2b365ad': true
+```
+
+上面的提交仅为示例，必须使用本次报错打印的完整键名，然后重新运行安装命令。保留文件中的其他配置；如果已有 `allowBuilds`，将条目合并进去，不要重复添加该字段。更新到新提交时可能需要重新授权。
+
+也可以先在本地打包，再安装包含构建产物的 `.tgz`，避免在 profile 安装过程中构建源码。如果通过 `npx` 安装 GitHub 源码时另遇到 npm 的 `EALLOWSCRIPTS`（`--allow-scripts is not allowed in project-scoped installs`），也可使用此方式。从项目目录运行：
 
 ```powershell
 npm ci
@@ -23,7 +38,7 @@ npx @deepseek-ai/dsh@0.1.2-rc.1 plugin --profile web add ./dsh-tool-manager-0.1.
 npx @deepseek-ai/dsh@0.1.2-rc.1 web
 ```
 
-包自带 `dsh.bundle.patch`，安装会挂载插件，不需要手改现有 `cordis.patch.yml`。发布产物包含构建好的 Host 和 Client，不依赖安装时运行构建脚本。
+包自带 `dsh.bundle.patch`，安装会挂载插件，不需要手改现有 `cordis.patch.yml`。`npm pack` 生成的 `.tgz` 包含构建好的 Host 和 Client，不依赖安装时运行构建脚本；直接安装 GitHub 源码则需要上述构建许可。
 
 本地开发可以直接链接当前目录：
 
@@ -37,7 +52,8 @@ npx @deepseek-ai/dsh@0.1.2-rc.1 plugin --profile web add .
 ## 使用
 
 - 每行开关决定本插件是否允许该工具；默认全部允许。
-- 支持按工具名/用途搜索，按终端、文件、搜索分类筛选。
+- 支持按工具名、用途或注册说明搜索，按终端、文件、搜索、其他分类筛选。
+- 其他工具首次加载后自动出现，无需逐个修改插件代码；会话预设工具需要先创建或打开对应会话。已禁用工具卸载后仍保留在列表中，再次加载时继续禁用。
 - 「当前未加载」表示当前运行时没有该工具。此时也可以预先设置开关，工具出现后生效。
 - 「本插件允许」不覆盖 Harness 原有的沙箱、审批或其他插件策略。
 - 「恢复默认」清空本插件的禁用名单，使所有工具恢复到本插件允许状态。
@@ -61,7 +77,7 @@ dsh-tool-manager:
     - write
 ```
 
-工具名精确匹配，不支持通配符；保留的 `run_code` 不能作为禁用目标。已配置但不在首版工具表中的名称会保留并作为「其他」显示。
+工具名精确匹配，不支持通配符；保留的 `run_code` 不能作为禁用目标，也不显示开关。可管理名称为 1–128 个英文字母、数字、下划线或连字符；不符合此格式的注册名称不显示。已配置但当前未加载的名称会保留并作为「其他」显示。
 
 ## 模式与访问限制
 
@@ -71,7 +87,7 @@ dsh-tool-manager:
 | Code/PTC/both | 正常经过注册表的子调用会被拦截；生成的 SDK 仍可能包含工具说明，页面会提示 |
 | 远程浏览器 | 首版不提供远程管理；不可写连接不会显示保存成功 |
 | 项目级 / 会话级覆盖 | 尚未提供 |
-| MCP 服务器管理 | 不在首版管理页面范围内 |
+| MCP 服务器管理 | 不管理服务器连接；通过同一工具注册表加载且名称符合上述格式的工具会自动显示 |
 
 关闭 `write` 只禁止这个工具；开放的 `pwsh`、`bash` 等工具仍可能写文件。要限制文件系统访问，应使用 DSH 沙箱。本插件不是恶意 Node 插件的隔离机制。
 
