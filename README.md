@@ -14,21 +14,13 @@
 npx @deepseek-ai/dsh@0.1.2-rc.1 plugin --profile web add github:Ghpt6/dsh-tool-manager
 ```
 
-GitHub 源码不包含 `lib/` 构建产物，pnpm 需要运行本包的 `prepack` 脚本。首次安装如果出现 `ERR_PNPM_GIT_DEP_PREPARE_NOT_ALLOWED`，请在报错指定的 profile 配置文件中添加该提交的构建许可。默认 Windows 路径为 `%USERPROFILE%\.dsh\profiles\web\pnpm-workspace.yaml`：
+仓库自带预先构建的 `lib/`，安装时不运行构建脚本，也不需要配置 `allowBuilds`。如果曾固定安装旧提交，请改用包含此安装修复的新提交。
 
-```yaml
-allowBuilds:
-  'dsh-tool-manager@https://codeload.github.com/Ghpt6/dsh-tool-manager/tar.gz/3211d01c1ecd464e5d52acd7065f8685b2b365ad': true
-```
-
-上面的提交仅为示例，必须使用本次报错打印的完整键名，然后重新运行安装命令。保留文件中的其他配置；如果已有 `allowBuilds`，将条目合并进去，不要重复添加该字段。更新到新提交时可能需要重新授权。
-
-也可以先在本地打包，再安装包含构建产物的 `.tgz`，避免在 profile 安装过程中构建源码。如果通过 `npx` 安装 GitHub 源码时另遇到 npm 的 `EALLOWSCRIPTS`（`--allow-scripts is not allowed in project-scoped installs`），也可使用此方式。从项目目录运行：
+也可以从项目目录生成 `.tgz` 后安装：
 
 ```powershell
 npm ci
-npm run check
-npm pack
+npm run pack:release
 npx @deepseek-ai/dsh@0.1.2-rc.1 plugin --profile web add ./dsh-tool-manager-0.1.0.tgz
 ```
 
@@ -38,7 +30,7 @@ npx @deepseek-ai/dsh@0.1.2-rc.1 plugin --profile web add ./dsh-tool-manager-0.1.
 npx @deepseek-ai/dsh@0.1.2-rc.1 web
 ```
 
-包自带 `dsh.bundle.patch`，安装会挂载插件，不需要手改现有 `cordis.patch.yml`。`npm pack` 生成的 `.tgz` 包含构建好的 Host 和 Client，不依赖安装时运行构建脚本；直接安装 GitHub 源码则需要上述构建许可。
+包自带 `dsh.bundle.patch`，安装会挂载插件，不需要手改现有 `cordis.patch.yml`。GitHub 仓库和 `.tgz` 均包含构建好的 Host 和 Client。
 
 本地开发可以直接链接当前目录：
 
@@ -107,6 +99,8 @@ npx @deepseek-ai/dsh@0.1.2-rc.1 plugin --profile web remove dsh-tool-manager
 npm ci
 npm run check
 ```
+
+`lib/` 是随源码提交的安装产物。修改源码后运行 `npm run check`，将更新的 `lib/` 一起提交；CI 会重新构建并检查产物是否同步。打包使用 `npm run pack:release`，会先检查并构建再执行 `npm pack`。不要添加 `prepare`、`prepack` 或安装生命周期脚本，以免 GitHub 安装再次要求用户批准构建。
 
 测试使用真实 Cordis、DSH 工具注册表、文件设置 provider，以及 Code/PTC worker runtime；不用付费模型 API，不读取用户的 DSH 凭据。临时文件写入 Git 忽略的 `.test-artifacts/`。
 

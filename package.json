@@ -44,7 +44,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check": "npm run typecheck && npm test && npm run build",
-    "prepack": "npm run build"
+    "pack:release": "npm run check && npm pack"
   },
   "dependencies": {
     "@deepseek-ai/schemastery": "3.18.2"
