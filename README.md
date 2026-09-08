@@ -6,12 +6,12 @@
 
 ## 安装
 
-已验证的 DSH 版本：**`0.1.2-rc.1`**。Node.js：`^22.19.0 || >=24.0.0`。本插件支持 GitHub 源码、本地源码或打包文件安装，尚未发布到 npm。
+Node.js：`^22.19.0 || >=24.0.0`。本插件支持 GitHub 源码、本地源码或打包文件安装，尚未发布到 npm。
 
 通过 GitHub 安装：
 
 ```powershell
-npx @deepseek-ai/dsh@0.1.2-rc.1 plugin --profile web add github:Ghpt6/dsh-tool-manager
+npx @deepseek-ai/dsh plugin --profile web add github:Ghpt6/dsh-tool-manager
 ```
 
 仓库自带预先构建的 `lib/`，安装时不运行构建脚本，也不需要配置 `allowBuilds`。如果曾固定安装旧提交，请改用包含此安装修复的新提交。
@@ -21,13 +21,13 @@ npx @deepseek-ai/dsh@0.1.2-rc.1 plugin --profile web add github:Ghpt6/dsh-tool-m
 ```powershell
 npm ci
 npm run pack:release
-npx @deepseek-ai/dsh@0.1.2-rc.1 plugin --profile web add ./dsh-tool-manager-0.1.0.tgz
+npx @deepseek-ai/dsh plugin --profile web add ./dsh-tool-manager-0.1.0.tgz
 ```
 
 重启 DSH Web，刷新浏览器，然后进入 **设置 → 工具管理**：
 
 ```powershell
-npx @deepseek-ai/dsh@0.1.2-rc.1 web
+npx @deepseek-ai/dsh web
 ```
 
 包自带 `dsh.bundle.patch`，安装会挂载插件，不需要手改现有 `cordis.patch.yml`。GitHub 仓库和 `.tgz` 均包含构建好的 Host 和 Client。
@@ -36,7 +36,7 @@ npx @deepseek-ai/dsh@0.1.2-rc.1 web
 
 ```powershell
 npm run build
-npx @deepseek-ai/dsh@0.1.2-rc.1 plugin --profile web add .
+npx @deepseek-ai/dsh plugin --profile web add .
 ```
 
 修改后重新构建、重启测试实例并刷新页面。
@@ -88,7 +88,7 @@ dsh-tool-manager:
 ## 卸载
 
 ```powershell
-npx @deepseek-ai/dsh@0.1.2-rc.1 plugin --profile web remove dsh-tool-manager
+npx @deepseek-ai/dsh plugin --profile web remove dsh-tool-manager
 ```
 
 重启 DSH 后，插件的过滤器和执行守卫移除，工具恢复 Harness 原有行为。settings 中的禁用名单保留，重新安装时继续生效。若希望同时清空偏好，请在卸载前点「恢复默认」。
@@ -101,11 +101,3 @@ npm run check
 ```
 
 `lib/` 是随源码提交的安装产物。修改源码后运行 `npm run check`，将更新的 `lib/` 一起提交；CI 会重新构建并检查产物是否同步。打包使用 `npm run pack:release`，会先检查并构建再执行 `npm pack`。不要添加 `prepare`、`prepack` 或安装生命周期脚本，以免 GitHub 安装再次要求用户批准构建。
-
-测试使用真实 Cordis、DSH 工具注册表、文件设置 provider，以及 Code/PTC worker runtime；不用付费模型 API，不读取用户的 DSH 凭据。临时文件写入 Git 忽略的 `.test-artifacts/`。
-
-验证覆盖：独立开关、作用域/子 Agent、其他策略不能重新放行、审批等待期间切换、运行中调用的边界、嵌套与 Code/PTC 调用、持久化重载、revision 冲突、输入校验和卸载清理。
-
-另在隔离的真实 `0.1.2-rc.1` DSH Web 实例中检查页面加载、开关写入 Host、搜索和重新打开页面后的状态，以及浅色/深色外观。验证记录见 [docs/verification.zh-CN.md](docs/verification.zh-CN.md)。
-
-实现依据与参考项目见 [调研与方案](docs/research-and-plan.zh-CN.md)。
