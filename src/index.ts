@@ -23,8 +23,8 @@ export function apply(ctx: Context, config: Config): void {
   const settings = ctx.settings.register(NAMESPACE, Config, { base: config, validate: validateSettings })
   // Read the committed snapshot at the check itself; watchers run asynchronously.
   ctx.tools.guard(exec => denialReason(settings.get(), exec.name))
-  ctx.on('system-prompt/assemble', async (_assembly, _context, next) => {
-    return filterPrompt(await next(), settings.get())
+  ctx.on('system-prompt/assemble', async (_assembly, context, next) => {
+    return filterPrompt(await next(), settings.get(), ctx.tools.schemas(context.scope).map(tool => tool.name))
   }, { prepend: true, global: true })
 
   let revision = 0
